@@ -13,13 +13,12 @@ FG = '-'
 GRAMMAR_RULES = r"""
         P: {<IN>}
         V: {<V.*>}
-        N: {<NN.*>}
-        NP: {<N|PP>+<DT|CD|PR.*|JJ|CC>}
-        NP: {<DT|CD|PR.*|JJ|CC><N|PP>+}
-        PP: {<P><NP>}
-        VP: {<NP|N><V.*>}
-        VP: {<V.*><NP|N>}
-        VP: {<VP><PP>}
+        N: {<S.*>}
+        NP:{<PR>*<A.*|A-PRO><CONJ>*<A.*|A-PRO>*<N|NP>}   
+        NP:{<A.*|A-PRO>*<S.*>+<A.*|A-PRO>*} 
+        VP: {<V.*>+<NP|N>}
+        VP: {<V.*>}
+             
         """
 
 
@@ -40,7 +39,7 @@ def open_file():
 def info():
     children = Toplevel()
     children.title('Help')
-    children.geometry("600x300+500+250")
+    children.geometry("600x300+500+350")
     outputHelpText = Text(children, height=20, width=80)
     scrollb = Scrollbar(children, command=outputHelpText.yview)
     scrollb.grid(row=4, column=8, sticky='nsew')
@@ -56,8 +55,8 @@ def draw_tree():
     text = text.replace('\n', '')
     if text != '':
         download_nltk_dependencies()
-        doc = nltk.word_tokenize(text, language="russian")
-        doc = nltk.pos_tag(doc)
+        doc = nltk.word_tokenize(text)
+        doc = nltk.pos_tag(doc, lang='rus')
         new_doc = []
         for item in doc:
             if item[1] != COMMA and item[1] != DOT and item[1] != FG:
