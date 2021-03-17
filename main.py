@@ -1,30 +1,40 @@
-import nltk
 from tkinter import *
 from tkinter import filedialog as fd
+
+import nltk
+from bs4 import BeautifulSoup
+
 from help import HELPTEXT
+import time
 
 DOT = '.'
 COMMA = ','
+FG = '-'
 GRAMMAR_RULES = r"""
         P: {<IN>}
-        V: {<V.*|MD>}
+        V: {<V.*>}
         N: {<NN.*>}
-        JJP: {<RB|RBR|RBS|JJ|JJR|JJS|CD>}
-        NP: {<N|PP>+<DT|PR.*|JJP|CC>}
-        NP: {<PDT>?<DT|PR.*|JJP|CC><N|PP>+}
-        PP: {<P><N|NP>}
-        VP: {<NP|N|PR.*><V|VP>+}
-        VP: {<V><NP|N>}
-        VP: {<V><JJP>}
+        NP: {<N|PP>+<DT|CD|PR.*|JJ|CC>}
+        NP: {<DT|CD|PR.*|JJ|CC><N|PP>+}
+        PP: {<P><NP>}
+        VP: {<NP|N><V.*>}
+        VP: {<V.*><NP|N>}
         VP: {<VP><PP>}
         """
 
 
-def open_html_file():
+def download_nltk_dependencies():
+    nltk.download('punkt')
+    nltk.download('averaged_perceptron_tagger')
+
+
+def open_file():
     file_name = fd.askopenfilename(filetypes=(("HTML files", "*.html"),))
     if file_name != '':
-        html_file_object = open(file_name, 'rb')
-
+        file = open("example.html", "r", encoding="utf-8")
+        contents = file.read()
+        soup = BeautifulSoup(contents, 'lxml')
+        calculated_text.insert(1.0, soup.body.text)
 
 
 def info():
@@ -41,18 +51,22 @@ def info():
 
 
 def draw_tree():
+    start = time.time()
     text = calculated_text.get(1.0, END)
     text = text.replace('\n', '')
     if text != '':
-        doc = nltk.word_tokenize(text)
+        download_nltk_dependencies()
+        doc = nltk.word_tokenize(text, language="russian")
         doc = nltk.pos_tag(doc)
         new_doc = []
         for item in doc:
-            if item[1] != COMMA and item[1] != DOT:
+            if item[1] != COMMA and item[1] != DOT and item[1] != FG:
                 new_doc.append(item)
         cp = nltk.RegexpParser(GRAMMAR_RULES)
         result = cp.parse(new_doc)
         result.draw()
+    end = time.time()
+    print("Total time: {:.1f}".format(end - start))
 
 
 root = Tk()
@@ -67,10 +81,10 @@ label.grid(row=0, column=0)
 calculated_text = Text(root, height=5, width=50)
 calculated_text.grid(row=1, column=1, sticky='nsew', columnspan=2)
 
-help_button= Button(text="Help", width=10, command=info)
+help_button = Button(text="Help", width=10, command=info)
 help_button.grid(row=0, column=3)
 
-open_button = Button(text="Open file", width=10, command=open_html_file,)
+open_button = Button(text="Open file", width=10, command=open_file)
 open_button.grid(row=1, column=3)
 
 ok_button = Button(text="Parse sentence", width=14, command=draw_tree)
